@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - MotoristaPro</title>
+    <!-- Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased pb-20">
+
+    <!-- Cabeçalho -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-car text-emerald-400"></i> MotoristaPro
+            </h1>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleConfig()" class="text-xs bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-600 transition flex items-center gap-1">
+                    <i class="fa-solid fa-gear"></i> Config
+                </button>
+                <button onclick="limparDados()" class="text-xs bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1.5 rounded-lg hover:bg-rose-500/30 transition">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-md mx-auto p-4 space-y-6">
+
+        <!-- Painel de Configurações (Oculto por padrão) -->
+        <section id="painelConfig" class="hidden bg-slate-800 border border-emerald-500/40 p-4 rounded-2xl shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Configurações do Veículo
+                </h2>
+                <button onclick="toggleConfig()" class="text-slate-400 hover:text-slate-200 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <!-- Tipo de Veículo -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Tipo de Veículo</label>
+                    <select id="cfgTipoVeiculo" onchange="atualizarTipoVeiculoUI()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+                        <option value="proprio">Veículo Próprio</option>
+                        <option value="alugado">Veículo Alugado</option>
+                    </select>
+                </div>
+
+                <!-- Custo de Aluguel (Se for Alugado) -->
+                <div id="campoAluguel" class="hidden">
+                    <label class="block text-xs text-slate-400 mb-1">Valor do Aluguel (R$ / Período)</label>
+                    <input type="number" step="0.01" id="cfgValorAluguel" placeholder="Ex: 500,00 por semana" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <!-- Combustível -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Preço do Litro (R$)</label>
+                        <input type="number" step="0.01" id="cfgPrecoCombustivel" placeholder="Ex: 5.79" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Consumo (km/L)</label>
+                        <input type="number" step="0.1" id="cfgConsumoKml" placeholder="Ex: 10.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <button onclick="salvarConfigurações()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl transition">
+                    Salvar Configurações
+                </button>
+            </div>
+        </section>
+
+        <!-- Cards de Resumo e Indicadores (KPIs por KM) -->
+        <section class="grid grid-cols-2 gap-3">
+            <!-- Saldo Líquido -->
+            <div class="col-span-2 bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+                <div class="absolute right-3 top-3 text-slate-700 text-3xl">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Lucro Líquido</p>
+                <h2 id="lblLucro" class="text-2xl font-black text-emerald-400 mt-1">R$ 0,00</h2>
+                
+                <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-700/60 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Entradas</span>
+                        <span id="lblTotalEntrada" class="font-bold text-emerald-400">R$ 0,00</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Saídas Total</span>
+                        <span id="lblTotalSaida" class="font-bold text-rose-400">R$ 0,00</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">KM Rodados</span>
+                        <span id="lblTotalKm" class="font-bold text-sky-400">0 km</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ganho por KM -->
+            <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-xl">
+                <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                    <span>Bruto / KM</span>
+                    <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i>
+                </div>
+                <p id="lblGanhoKm" class="text-lg font-bold text-slate-100">R$ 0,00</p>
+            </div>
+
+            <!-- Despesa Total por KM -->
+            <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-xl">
+                <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                    <span>Despesa Total / KM</span>
+                    <i class="fa-solid fa-arrow-trend-down text-rose-400"></i>
+                </div>
+                <p id="lblDespesaKm" class="text-lg font-bold text-slate-100">R$ 0,00</p>
+            </div>
+
+            <!-- Custo Estimado de Combustível por KM -->
+            <div class="col-span-2 bg-slate-800/80 border border-slate-700 p-3.5 rounded-xl flex justify-between items-center text-xs">
+                <div>
+                    <span class="text-slate-400 block font-medium">Custo Estimado de Combustível / KM</span>
+                    <span id="lblCustoCombustivelKm" class="text-sm font-bold text-amber-400">R$ 0,00 / km</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-slate-400 block font-medium">Gasto Total Est. Combustível</span>
+                    <span id="lblGastoTotalCombustivel" class="text-sm font-bold text-amber-400">R$ 0,00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Formulário de Lançamento -->
+        <section class="bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-lg">
+            <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Novo Lançamento</h2>
+            
+            <form id="formTransacao" onsubmit="adicionarTransacao(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btnTipoEntrada" onclick="setTipo('entrada')" class="py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 text-white transition shadow-sm">
+                        <i class="fa-solid fa-plus-circle mr-1"></i> Ganho
+                    </button>
+                    <button type="button" id="btnTipoSaida" onclick="setTipo('saida')" class="py-2.5 rounded-xl text-sm font-semibold bg-slate-700 text-slate-300 transition">
+                        <i class="fa-solid fa-minus-circle mr-1"></i> Despesa
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Descrição</label>
+                    <input type="text" id="inputDesc" required placeholder="Ex: Corridas Uber, Abastecimento, Aluguel..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 text-slate-100">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" id="inputValor" required placeholder="0,00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">KM Rodados</label>
+                        <input type="number" step="0.1" id="inputKm" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 text-slate-100">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-500/10">
+                    Adicionar Registro
+                </button>
+            </form>
+        </section>
+
+        <!-- Histórico de Lançamentos -->
+        <section class="space-y-3">
+            <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Histórico Recente</h2>
+            <div id="listaTransacoes" class="space-y-2">
+                <!-- Inserido dinamicamente via JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Script de Funcionamento e Lógica -->
+    <script>
+        let transacoes = JSON.parse(localStorage.getItem('driver_transacoes')) || [];
+        let config = JSON.parse(localStorage.getItem('driver_config')) || {
+            tipoVeiculo: 'proprio',
+            valorAluguel: 0,
+            precoCombustivel: 0,
+            consumoKml: 0
+        };
+
+        let tipoAtual = 'entrada';
+
+        function toggleConfig() {
+            const painel = document.getElementById('painelConfig');
+            painel.classList.toggle('hidden');
+        }
+
+        function atualizarTipoVeiculoUI() {
+            const tipo = document.getElementById('cfgTipoVeiculo').value;
+            const campoAluguel = document.getElementById('campoAluguel');
+            if (tipo === 'alugado') {
+                campoAluguel.classList.remove('hidden');
+            } else {
+                campoAluguel.classList.add('hidden');
+            }
+        }
+
+        function carregarConfiguracoes() {
+            document.getElementById('cfgTipoVeiculo').value = config.tipoVeiculo || 'proprio';
+            document.getElementById('cfgValorAluguel').value = config.valorAluguel || '';
+            document.getElementById('cfgPrecoCombustivel').value = config.precoCombustivel || '';
+            document.getElementById('cfgConsumoKml').value = config.consumoKml || '';
+            atualizarTipoVeiculoUI();
+        }
+
+        function salvarConfigurações() {
+            config.tipoVeiculo = document.getElementById('cfgTipoVeiculo').value;
+            config.valorAluguel = parseFloat(document.getElementById('cfgValorAluguel').value) || 0;
+            config.precoCombustivel = parseFloat(document.getElementById('cfgPrecoCombustivel').value) || 0;
+            config.consumoKml = parseFloat(document.getElementById('cfgConsumoKml').value) || 0;
+
+            localStorage.setItem('driver_config', JSON.stringify(config));
+            toggleConfig();
+            renderizar();
+        }
+
+        function setTipo(tipo) {
+            tipoAtual = tipo;
+            const btnEntrada = document.getElementById('btnTipoEntrada');
+            const btnSaida = document.getElementById('btnTipoSaida');
+
+            if (tipo === 'entrada') {
+                btnEntrada.className = "py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 text-white transition shadow-sm";
+                btnSaida.className = "py-2.5 rounded-xl text-sm font-semibold bg-slate-700 text-slate-300 transition";
+            } else {
+                btnSaida.className = "py-2.5 rounded-xl text-sm font-semibold bg-rose-500 text-white transition shadow-sm";
+                btnEntrada.className = "py-2.5 rounded-xl text-sm font-semibold bg-slate-700 text-slate-300 transition";
+            }
+        }
+
+        function adicionarTransacao(e) {
+            e.preventDefault();
+            
+            const desc = document.getElementById('inputDesc').value;
+            const valor = parseFloat(document.getElementById('inputValor').value);
+            const km = parseFloat(document.getElementById('inputKm').value) || 0;
+
+            const novaTransacao = {
+                id: Date.now(),
+                tipo: tipoAtual,
+                desc,
+                valor,
+                km
+            };
+
+            transacoes.unshift(novaTransacao);
+            salvarERenderizar();
+
+            document.getElementById('formTransacao').reset();
+            setTipo('entrada');
+        }
+
+        function excluirTransacao(id) {
+            transacoes = transacoes.filter(t => t.id !== id);
+            salvarERenderizar();
+        }
+
+        function limparDados() {
+            if (confirm('Deseja realmente apagar todos os registros?')) {
+                transacoes = [];
+                salvarERenderizar();
+            }
+        }
+
+        function salvarERenderizar() {
+            localStorage.setItem('driver_transacoes', JSON.stringify(transacoes));
+            renderizar();
+        }
+
+        function formatarMoeda(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function renderizar() {
+            const lista = document.getElementById('listaTransacoes');
+            lista.innerHTML = '';
+
+            let totalEntrada = 0;
+            let totalSaida = 0;
+            let totalKm = 0;
+
+            if (transacoes.length === 0) {
+                lista.innerHTML = `
+                    <div class="text-center py-8 bg-slate-800/50 border border-slate-800 rounded-2xl text-slate-500 text-sm">
+                        Nenhum lançamento registrado ainda.
+                    </div>
+                `;
+            }
+
+            transacoes.forEach(t => {
+                if (t.tipo === 'entrada') {
+                    totalEntrada += t.valor;
+                } else {
+                    totalSaida += t.valor;
+                }
+                totalKm += t.km;
+
+                const item = document.createElement('div');
+                item.className = "bg-slate-800 border border-slate-700/80 p-3.5 rounded-xl flex justify-between items-center";
+                
+                const corValor = t.tipo === 'entrada' ? 'text-emerald-400' : 'text-rose-400';
+                const sinal = t.tipo === 'entrada' ? '+' : '-';
+
+                item.innerHTML = `
+                    <div class="space-y-0.5">
+                        <p class="text-sm font-semibold text-slate-200">${t.desc}</p>
+                        <div class="flex items-center gap-3 text-xs text-slate-400">
+                            <span><i class="fa-solid fa-road mr-1"></i> ${t.km} km</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-bold ${corValor}">${sinal} ${formatarMoeda(t.valor)}</span>
+                        <button onclick="excluirTransacao(${t.id})" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                lista.appendChild(item);
+            });
+
+            // Cálculos com as Configurações de Combustível e Veículo
+            let custoCombustivelPorKm = 0;
+            if (config.precoCombustivel > 0 && config.consumoKml > 0) {
+                custoCombustivelPorKm = config.precoCombustivel / config.consumoKml;
+            }
+
+            const gastoTotalCombustivelEst = totalKm * custoCombustivelPorKm;
+            const lucroLiquido = totalEntrada - totalSaida;
+            const ganhoKm = totalKm > 0 ? totalEntrada / totalKm : 0;
+            const despesaKm = totalKm > 0 ? totalSaida / totalKm : 0;
+
+            // Atualização da Tela
+            document.getElementById('lblLucro').innerText = formatarMoeda(lucroLiquido);
+            document.getElementById('lblLucro').className = `text-2xl font-black mt-1 ${lucroLiquido >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            document.getElementById('lblTotalEntrada').innerText = formatarMoeda(totalEntrada);
+            document.getElementById('lblTotalSaida').innerText = formatarMoeda(totalSaida);
+            document.getElementById('lblTotalKm').innerText = `${totalKm.toFixed(1)} km`;
+
+            document.getElementById('lblGanhoKm').innerText = formatarMoeda(ganhoKm);
+            document.getElementById('lblDespesaKm').innerText = formatarMoeda(despesaKm);
+
+            document.getElementById('lblCustoCombustivelKm').innerText = `${formatarMoeda(custoCombustivelPorKm)} / km`;
+            document.getElementById('lblGastoTotalCombustivel').innerText = formatarMoeda(gastoTotalCombustivelEst);
+        }
+
+        // Executar ao abrir
+        carregarConfiguracoes();
+        renderizar();
+    </script>
+</body>
+</html>
